@@ -48,10 +48,15 @@ Download pretrained models [SAM_vit_h](https://dl.fbaipublicfiles.com/segment_an
 python matte_anything.py
 ```
 
+### How to use
+1. Upload the image and click for SAM to generate a segment mask (default: ``foreground point``).
+2. Click ``Start!``.
+3. Modify ``erode_kernel_size`` and ``dilate_kernel_size`` for a better trimap (optional).
+
 ## 📋 Todo List
 
 - [ ] add images examples for quick start
-- [ ] adjustable trimap generation
+- [x] adjustable trimap generation
 - [ ] test matte anything on public datasets
 - [ ] support video matting
 - [ ] arxiv tech report

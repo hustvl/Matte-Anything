@@ -94,7 +94,7 @@ if __name__ == "__main__":
     predictor = init_segment_anything(sam_model)
     vitmatte = init_vitmatte(vitmatte_model)
 
-    def run_inference(input_x, selected_points):
+    def run_inference(input_x, selected_points, erode_kernel_size, dilate_kernel_size):
         predictor.set_image(input_x)
         if len(selected_points) != 0:
             points = torch.Tensor([p for p, _ in selected_points]).to(device).unsqueeze(1)
@@ -122,7 +122,7 @@ if __name__ == "__main__":
         # generate alpha matte
         torch.cuda.empty_cache()
         mask = masks[0][0].astype(np.uint8)*255
-        trimap = generate_trimap(mask).astype(np.float32)
+        trimap = generate_trimap(mask, erode_kernel_size, dilate_kernel_size).astype(np.float32)
         trimap[trimap==128] = 0.5
         trimap[trimap==255] = 1
 
@@ -145,7 +145,7 @@ if __name__ == "__main__":
 
         # return img, mask_all
         trimap[trimap==1] == 0.999
-        return mask, foreground_mask, foreground_alpha
+        return mask, trimap, foreground_mask, foreground_alpha
 
     with gr.Blocks() as demo:
         gr.Markdown(
@@ -166,11 +166,14 @@ if __name__ == "__main__":
                     radio = gr.Radio(['foreground_point', 'background_point'], label='point labels')
                 # run button
                 button = gr.Button("Start!")
+                erode_kernel_size = gr.inputs.Slider(minimum=1, maximum=30, step=1, default=10, label="erode_kernel_size")
+                dilate_kernel_size = gr.inputs.Slider(minimum=1, maximum=30, step=1, default=10, label="dilate_kernel_size")
+
             # show the image with mask
             with gr.Tab(label='SAM Mask'):
                 mask = gr.Image(type='numpy')
-            # with gr.Tab(label='Trimap'):
-            #     trimap = gr.Image(type='numpy')
+            with gr.Tab(label='Trimap'):
+                trimap = gr.Image(type='numpy')
             # show only mask
             with gr.Tab(label='Foreground by SAM Mask'):
                 foreground_by_sam_mask = gr.Image(type='numpy')
@@ -191,6 +194,6 @@ if __name__ == "__main__":
             [original_image, selected_points],
             [input_image]
         )
-        button.click(run_inference, inputs=[original_image, selected_points], outputs=[mask, foreground_by_sam_mask, refined_by_vitmatte])
+        button.click(run_inference, inputs=[original_image, selected_points, erode_kernel_size, dilate_kernel_size], outputs=[mask, trimap, foreground_by_sam_mask, refined_by_vitmatte])
 
     demo.launch()
