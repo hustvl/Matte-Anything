@@ -49,7 +49,7 @@ python matte_anything.py
 ```
 
 ### How to use
-1. Upload the image and click for SAM to generate a segment mask (default: ``foreground point``).
+1. Upload the image and click on it (default: ``foreground point``).
 2. Click ``Start!``.
 3. Modify ``erode_kernel_size`` and ``dilate_kernel_size`` for a better trimap (optional).
 
