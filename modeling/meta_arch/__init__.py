@@ -1,0 +1,1 @@
+from .vitmatte import ViTMatte
