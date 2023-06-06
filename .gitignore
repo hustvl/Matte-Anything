@@ -146,3 +146,6 @@ dmypy.json
 .pyre/
 
 cluster.sh
+
+# GroundingDINO
+GroundingDINO/
