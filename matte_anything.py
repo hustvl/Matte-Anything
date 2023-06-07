@@ -1,13 +1,19 @@
+import os
 import cv2
 import torch
 import numpy as np
 import gradio as gr
+from PIL import Image
+from torchvision.ops import box_convert
 from detectron2.config import LazyConfig, instantiate
 from detectron2.checkpoint import DetectionCheckpointer
 from segment_anything import sam_model_registry, SamPredictor
+import groundingdino.datasets.transforms as T
+from groundingdino.util.inference import load_model as dino_load_model, predict as dino_predict, annotate as dino_annotate
 
 models = {
-	'vit_h': './pretrained/sam_vit_h_4b8939.pth'
+	'vit_h': './pretrained/sam_vit_h_4b8939.pth',
+    'vit_b': './pretrained/sam_vit_b_01ec64.pth'
 }
 
 vitmatte_models = {
@@ -17,6 +23,35 @@ vitmatte_models = {
 vitmatte_config = {
 	'vit_b': './configs/matte_anything.py',
 }
+
+grounding_dino = {
+    'config': './GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py',
+    'weight': './pretrained/groundingdino_swint_ogc.pth'
+}
+
+def generate_checkerboard_image(height, width, num_squares):
+    num_squares_h = num_squares
+    square_size_h = height // num_squares_h
+    square_size_w = square_size_h
+    num_squares_w = width // square_size_w
+    
+
+    new_height = num_squares_h * square_size_h
+    new_width = num_squares_w * square_size_w
+    image = np.zeros((new_height, new_width), dtype=np.uint8)
+
+    for i in range(num_squares_h):
+        for j in range(num_squares_w):
+            start_x = j * square_size_w
+            start_y = i * square_size_h
+            color = 255 if (i + j) % 2 == 0 else 200
+            image[start_y:start_y + square_size_h, start_x:start_x + square_size_w] = color
+
+    image = cv2.resize(image, (width, height))
+    image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+
+    return image
+
 
 def init_segment_anything(model_type):
     """
@@ -81,6 +116,16 @@ def undo_points(orig_img, sel_pix):
 def store_img(img):
     return img, []  # when new image is uploaded, `selected_points` should be empty
 
+def convert_pixels(gray_image, boxes):
+    converted_image = np.copy(gray_image)
+
+    for box in boxes:
+        x1, y1, x2, y2 = box
+        x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+        converted_image[y1:y2, x1:x2][converted_image[y1:y2, x1:x2] == 1] = 0.5
+
+    return converted_image
+
 if __name__ == "__main__":
     device = 'cuda'
     sam_model = 'vit_h'
@@ -93,8 +138,36 @@ if __name__ == "__main__":
 
     predictor = init_segment_anything(sam_model)
     vitmatte = init_vitmatte(vitmatte_model)
+    grounding_dino = dino_load_model(grounding_dino['config'], grounding_dino['weight'])
 
-    def run_inference(input_x, selected_points, erode_kernel_size, dilate_kernel_size):
+    def run_inference(input_x, selected_points, erode_kernel_size, dilate_kernel_size, text):
+        
+        if text != '':
+            dino_transform = T.Compose(
+            [
+                T.RandomResize([800], max_size=1333),
+                T.ToTensor(),
+                T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+            ])
+            image_transformed, _ = dino_transform(Image.fromarray(input_x), None)
+            user_boxes, user_logits, user_phrases = dino_predict(
+                model=grounding_dino,
+                image=image_transformed,
+                caption=text,
+                box_threshold=0.5,
+                text_threshold=0.25,
+                )
+            if user_boxes.shape[0] == 0:
+                # no transparent object detected
+                user_xyxy = None
+                pass
+            else:
+                h, w, _ = input_x.shape
+                user_boxes = user_boxes * torch.Tensor([w, h, w, h])
+                user_xyxy = box_convert(boxes=user_boxes, in_fmt="cxcywh", out_fmt="xyxy").to(device)
+                user_xyxy = torch.round(user_xyxy)
+        
+        torch.cuda.empty_cache()
         predictor.set_image(input_x)
         if len(selected_points) != 0:
             points = torch.Tensor([p for p, _ in selected_points]).to(device).unsqueeze(1)
@@ -103,14 +176,22 @@ if __name__ == "__main__":
             print(points.size(), transformed_points.size(), labels.size(), input_x.shape, points)
         else:
             transformed_points, labels = None, None
-                    
+        
         # predict segmentation according to the boxes
-        masks, scores, logits = predictor.predict_torch(
-            point_coords=transformed_points.permute(1, 0, 2),
-            point_labels=labels.permute(1, 0),
-            boxes=None,
-            multimask_output=False,
-        )
+        if transformed_points is not None:
+            masks, scores, logits = predictor.predict_torch(
+                point_coords=transformed_points.permute(1, 0, 2),
+                point_labels=labels.permute(1, 0),
+                boxes=user_xyxy,
+                multimask_output=False,
+            )
+        else:
+            masks, scores, logits = predictor.predict_torch(
+                point_coords=None,
+                point_labels=None,
+                boxes=user_xyxy,
+                multimask_output=False,
+            )
         masks = masks.cpu().detach().numpy()
         mask_all = np.ones((input_x.shape[0], input_x.shape[1], 3))
         for ann in masks:
@@ -126,26 +207,78 @@ if __name__ == "__main__":
         trimap[trimap==128] = 0.5
         trimap[trimap==255] = 1
 
+        dino_transform = T.Compose(
+        [
+            T.RandomResize([800], max_size=1333),
+            T.ToTensor(),
+            T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ])
+        image_transformed, _ = dino_transform(Image.fromarray(input_x), None)
+        boxes, logits, phrases = dino_predict(
+            model=grounding_dino,
+            image=image_transformed,
+            caption="glass, lens, crystal, diamond, bubble, bulb, web, grid",
+            box_threshold=0.5,
+            text_threshold=0.25,
+            )
+        annotated_frame = dino_annotate(image_source=input_x, boxes=boxes, logits=logits, phrases=phrases)
+        # 把annotated_frame的改成RGB
+        annotated_frame = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
+
+        if boxes.shape[0] == 0:
+            # no transparent object detected
+            pass
+        else:
+            h, w, _ = input_x.shape
+            boxes = boxes * torch.Tensor([w, h, w, h])
+            xyxy = box_convert(boxes=boxes, in_fmt="cxcywh", out_fmt="xyxy").numpy()
+            trimap = convert_pixels(trimap, xyxy)
+
         input = {
             "image": torch.from_numpy(input_x).permute(2, 0, 1).unsqueeze(0)/255,
             "trimap": torch.from_numpy(trimap).unsqueeze(0).unsqueeze(0),
         }
 
+        torch.cuda.empty_cache()
         alpha = vitmatte(input)['phas'].flatten(0,2)
         alpha = alpha.detach().cpu().numpy()
         
         # get a green background
-        background = np.ones_like(input_x) * np.array([0, 254, 0])
+        background = generate_checkerboard_image(input_x.shape[0], input_x.shape[1], 8)
 
         # calculate foreground with alpha blending
-        foreground_alpha = input_x * np.expand_dims(alpha, axis=2).repeat(3,2)/255
+        foreground_alpha = input_x * np.expand_dims(alpha, axis=2).repeat(3,2)/255 + background * (1 - np.expand_dims(alpha, axis=2).repeat(3,2))/255
 
         # calculate foreground with mask
-        foreground_mask = input_x * np.expand_dims(mask/255, axis=2).repeat(3,2)/255
+        foreground_mask = input_x * np.expand_dims(mask/255, axis=2).repeat(3,2)/255 + background * (1 - np.expand_dims(mask/255, axis=2).repeat(3,2))/255
+
+        foreground_alpha[foreground_alpha>1] = 1
+        foreground_mask[foreground_mask>1] = 1
 
         # return img, mask_all
         trimap[trimap==1] == 0.999
-        return mask, trimap, foreground_mask, foreground_alpha
+
+        # new background
+
+        background_1 = cv2.imread('figs/nightsky.jpg')
+        background_2 = cv2.imread('figs/sea_sunset.jpg')
+        background_3 = cv2.imread('figs/mars.jpg')
+
+        background_1 = cv2.resize(background_1, (input_x.shape[1], input_x.shape[0]))
+        background_2 = cv2.resize(background_2, (input_x.shape[1], input_x.shape[0]))
+        background_3 = cv2.resize(background_3, (input_x.shape[1], input_x.shape[0]))
+
+        # to RGB
+        background_1 = cv2.cvtColor(background_1, cv2.COLOR_BGR2RGB)
+        background_2 = cv2.cvtColor(background_2, cv2.COLOR_BGR2RGB)
+        background_3 = cv2.cvtColor(background_3, cv2.COLOR_BGR2RGB)
+
+        # use alpha blending
+        new_bg_1 = input_x * np.expand_dims(alpha, axis=2).repeat(3,2)/255 + background_1 * (1 - np.expand_dims(alpha, axis=2).repeat(3,2))/255
+        new_bg_2 = input_x * np.expand_dims(alpha, axis=2).repeat(3,2)/255 + background_2 * (1 - np.expand_dims(alpha, axis=2).repeat(3,2))/255
+        new_bg_3 = input_x * np.expand_dims(alpha, axis=2).repeat(3,2)/255 + background_3 * (1 - np.expand_dims(alpha, axis=2).repeat(3,2))/255
+
+        return  mask, alpha,  foreground_mask, foreground_alpha, new_bg_1, new_bg_2, new_bg_3
 
     with gr.Blocks() as demo:
         gr.Markdown(
@@ -164,6 +297,7 @@ if __name__ == "__main__":
                     with gr.Row():
                         undo_button = gr.Button('Remove Points')
                     radio = gr.Radio(['foreground_point', 'background_point'], label='point labels')
+                text = gr.Textbox(label='Text prompt(optional)')
                 # run button
                 button = gr.Button("Start!")
                 erode_kernel_size = gr.inputs.Slider(minimum=1, maximum=30, step=1, default=10, label="erode_kernel_size")
@@ -172,13 +306,24 @@ if __name__ == "__main__":
             # show the image with mask
             with gr.Tab(label='SAM Mask'):
                 mask = gr.Image(type='numpy')
-            with gr.Tab(label='Trimap'):
-                trimap = gr.Image(type='numpy')
+            # with gr.Tab(label='Trimap'):
+            #     trimap = gr.Image(type='numpy')
+            with gr.Tab(label='Alpha Matte'):
+                alpha = gr.Image(type='numpy')
             # show only mask
             with gr.Tab(label='Foreground by SAM Mask'):
                 foreground_by_sam_mask = gr.Image(type='numpy')
             with gr.Tab(label='Refined by ViTMatte'):
                 refined_by_vitmatte = gr.Image(type='numpy')
+            # with gr.Tab(label='Transparency Detection'):
+            #     transparency = gr.Image(type='numpy')
+            with gr.Tab(label='New Background 1'):
+                new_bg_1 = gr.Image(type='numpy')
+            with gr.Tab(label='New Background 2'):
+                new_bg_2 = gr.Image(type='numpy')
+            with gr.Tab(label='New Background 3'):
+                new_bg_3 = gr.Image(type='numpy')
+
         input_image.upload(
             store_img,
             [input_image],
@@ -194,6 +339,11 @@ if __name__ == "__main__":
             [original_image, selected_points],
             [input_image]
         )
-        button.click(run_inference, inputs=[original_image, selected_points, erode_kernel_size, dilate_kernel_size], outputs=[mask, trimap, foreground_by_sam_mask, refined_by_vitmatte])
+        button.click(run_inference, inputs=[original_image, selected_points, erode_kernel_size, dilate_kernel_size, text], outputs=[mask, alpha,  \
+                                            foreground_by_sam_mask, refined_by_vitmatte, new_bg_1, new_bg_2, new_bg_3])
+
+        with gr.Row():
+            with gr.Column():
+                background_image = gr.State(value=None)
 
     demo.launch()

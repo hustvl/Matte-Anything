@@ -8,7 +8,6 @@ Institute: School of EIC, HUST
 
 </div>
 
-#
 
 ## 📜 Introduction
 
@@ -23,7 +22,7 @@ If you like Matte Anything, you may also like its previous foundation work [ViTM
 * **`2023/06/07`** We release source codes of Matte Anything!
 
 ## 🌞 Features
-* Matte with Simple Interaction
+* Matte Anything with Simple Interaction
 * High Quality Matting Results
 * Ability to Process Transparent Object
 
