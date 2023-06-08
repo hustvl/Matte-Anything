@@ -297,7 +297,8 @@ if __name__ == "__main__":
                     with gr.Row():
                         undo_button = gr.Button('Remove Points')
                     radio = gr.Radio(['foreground_point', 'background_point'], label='point labels')
-                text = gr.Textbox(label='Text prompt(optional)')
+                # text = gr.Textbox(label='Text prompt(optional)')
+                text = None
                 # run button
                 button = gr.Button("Start!")
                 erode_kernel_size = gr.inputs.Slider(minimum=1, maximum=30, step=1, default=10, label="erode_kernel_size")
