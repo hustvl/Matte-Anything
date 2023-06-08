@@ -225,9 +225,9 @@ if __name__ == "__main__":
 
         # new background
 
-        background_1 = cv2.imread('backgrounds/sea.jpg')
-        background_2 = cv2.imread('backgrounds/forest.jpg')
-        background_3 = cv2.imread('backgrounds/sunny.jpg')
+        background_1 = cv2.imread('figs/sea.jpg')
+        background_2 = cv2.imread('figs/forest.jpg')
+        background_3 = cv2.imread('figs/sunny.jpg')
 
         background_1 = cv2.resize(background_1, (input_x.shape[1], input_x.shape[0]))
         background_2 = cv2.resize(background_2, (input_x.shape[1], input_x.shape[0]))
