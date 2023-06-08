@@ -140,34 +140,7 @@ if __name__ == "__main__":
     vitmatte = init_vitmatte(vitmatte_model)
     grounding_dino = dino_load_model(grounding_dino['config'], grounding_dino['weight'])
 
-    def run_inference(input_x, selected_points, erode_kernel_size, dilate_kernel_size, text):
-        
-        # if text != '':
-        #     dino_transform = T.Compose(
-        #     [
-        #         T.RandomResize([800], max_size=1333),
-        #         T.ToTensor(),
-        #         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-        #     ])
-        #     image_transformed, _ = dino_transform(Image.fromarray(input_x), None)
-        #     user_boxes, user_logits, user_phrases = dino_predict(
-        #         model=grounding_dino,
-        #         image=image_transformed,
-        #         caption=text,
-        #         box_threshold=0.5,
-        #         text_threshold=0.25,
-        #         )
-        #     if user_boxes.shape[0] == 0:
-        #         # no transparent object detected
-        #         user_xyxy = None
-        #         pass
-        #     else:
-        #         h, w, _ = input_x.shape
-        #         user_boxes = user_boxes * torch.Tensor([w, h, w, h])
-        #         user_xyxy = box_convert(boxes=user_boxes, in_fmt="cxcywh", out_fmt="xyxy").to(device)
-        #         user_xyxy = torch.round(user_xyxy)
-        
-        # torch.cuda.empty_cache()
+    def run_inference(input_x, selected_points, erode_kernel_size, dilate_kernel_size):
         predictor.set_image(input_x)
         if len(selected_points) != 0:
             points = torch.Tensor([p for p, _ in selected_points]).to(device).unsqueeze(1)
@@ -176,22 +149,14 @@ if __name__ == "__main__":
             print(points.size(), transformed_points.size(), labels.size(), input_x.shape, points)
         else:
             transformed_points, labels = None, None
-        
+                    
         # predict segmentation according to the boxes
-        if transformed_points is not None:
-            masks, scores, logits = predictor.predict_torch(
-                point_coords=transformed_points.permute(1, 0, 2),
-                point_labels=labels.permute(1, 0),
-                boxes=user_xyxy,
-                multimask_output=False,
-            )
-        else:
-            masks, scores, logits = predictor.predict_torch(
-                point_coords=None,
-                point_labels=None,
-                boxes=user_xyxy,
-                multimask_output=False,
-            )
+        masks, scores, logits = predictor.predict_torch(
+            point_coords=transformed_points.permute(1, 0, 2),
+            point_labels=labels.permute(1, 0),
+            boxes=None,
+            multimask_output=False,
+        )
         masks = masks.cpu().detach().numpy()
         mask_all = np.ones((input_x.shape[0], input_x.shape[1], 3))
         for ann in masks:
@@ -260,9 +225,9 @@ if __name__ == "__main__":
 
         # new background
 
-        background_1 = cv2.imread('figs/sunny.jpg')
-        background_2 = cv2.imread('figs/sea_sunset.jpg')
-        background_3 = cv2.imread('figs/mars.jpg')
+        background_1 = cv2.imread('backgrounds/wall.jpg')
+        background_2 = cv2.imread('backgrounds/forest.jpg')
+        background_3 = cv2.imread('backgrounds/sea.jpg')
 
         background_1 = cv2.resize(background_1, (input_x.shape[1], input_x.shape[0]))
         background_2 = cv2.resize(background_2, (input_x.shape[1], input_x.shape[0]))
@@ -297,8 +262,6 @@ if __name__ == "__main__":
                     with gr.Row():
                         undo_button = gr.Button('Remove Points')
                     radio = gr.Radio(['foreground_point', 'background_point'], label='point labels')
-                # text = gr.Textbox(label='Text prompt(optional)')
-                text = None
                 # run button
                 button = gr.Button("Start!")
                 erode_kernel_size = gr.inputs.Slider(minimum=1, maximum=30, step=1, default=10, label="erode_kernel_size")
@@ -340,7 +303,7 @@ if __name__ == "__main__":
             [original_image, selected_points],
             [input_image]
         )
-        button.click(run_inference, inputs=[original_image, selected_points, erode_kernel_size, dilate_kernel_size, text], outputs=[mask, alpha,  \
+        button.click(run_inference, inputs=[original_image, selected_points, erode_kernel_size, dilate_kernel_size], outputs=[mask, alpha,  \
                                             foreground_by_sam_mask, refined_by_vitmatte, new_bg_1, new_bg_2, new_bg_3])
 
         with gr.Row():
