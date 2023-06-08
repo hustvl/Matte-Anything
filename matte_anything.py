@@ -142,32 +142,32 @@ if __name__ == "__main__":
 
     def run_inference(input_x, selected_points, erode_kernel_size, dilate_kernel_size, text):
         
-        if text != '':
-            dino_transform = T.Compose(
-            [
-                T.RandomResize([800], max_size=1333),
-                T.ToTensor(),
-                T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-            ])
-            image_transformed, _ = dino_transform(Image.fromarray(input_x), None)
-            user_boxes, user_logits, user_phrases = dino_predict(
-                model=grounding_dino,
-                image=image_transformed,
-                caption=text,
-                box_threshold=0.5,
-                text_threshold=0.25,
-                )
-            if user_boxes.shape[0] == 0:
-                # no transparent object detected
-                user_xyxy = None
-                pass
-            else:
-                h, w, _ = input_x.shape
-                user_boxes = user_boxes * torch.Tensor([w, h, w, h])
-                user_xyxy = box_convert(boxes=user_boxes, in_fmt="cxcywh", out_fmt="xyxy").to(device)
-                user_xyxy = torch.round(user_xyxy)
+        # if text != '':
+        #     dino_transform = T.Compose(
+        #     [
+        #         T.RandomResize([800], max_size=1333),
+        #         T.ToTensor(),
+        #         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        #     ])
+        #     image_transformed, _ = dino_transform(Image.fromarray(input_x), None)
+        #     user_boxes, user_logits, user_phrases = dino_predict(
+        #         model=grounding_dino,
+        #         image=image_transformed,
+        #         caption=text,
+        #         box_threshold=0.5,
+        #         text_threshold=0.25,
+        #         )
+        #     if user_boxes.shape[0] == 0:
+        #         # no transparent object detected
+        #         user_xyxy = None
+        #         pass
+        #     else:
+        #         h, w, _ = input_x.shape
+        #         user_boxes = user_boxes * torch.Tensor([w, h, w, h])
+        #         user_xyxy = box_convert(boxes=user_boxes, in_fmt="cxcywh", out_fmt="xyxy").to(device)
+        #         user_xyxy = torch.round(user_xyxy)
         
-        torch.cuda.empty_cache()
+        # torch.cuda.empty_cache()
         predictor.set_image(input_x)
         if len(selected_points) != 0:
             points = torch.Tensor([p for p, _ in selected_points]).to(device).unsqueeze(1)
