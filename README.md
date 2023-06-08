@@ -75,9 +75,11 @@ python matte_anything.py
 ## 📋 Todo List
 
 - [x] adjustable trimap generation
-- [ ] arxiv tech report
+- [x] arxiv tech report
+- [ ] add example data
 - [ ] support user transparency correction
 - [ ] support text input
+- [ ] finetune ViTMatte for better performance
 
 
 ## 🤝Acknowledgement
