@@ -12,6 +12,8 @@ Institute: School of EIC, HUST
 
 </div>
 
+![demo](https://github.com/hustvl/Matte-Anything/assets/74295796/d947f59d-b0c1-4c22-9967-d8f2bf633879)
+
 
 ## 📜 Introduction
 
