@@ -76,7 +76,7 @@ python matte_anything.py
 2. Click ``Start!``.
 3. Modify ``erode_kernel_size`` and ``dilate_kernel_size`` for a better trimap (optional).
 
-## 🎬Demo
+## 🎬 Demo
 
 
 https://github.com/hustvl/Matte-Anything/assets/74295796/dfe051c2-b5d1-442d-9eff-cd1fcfd1f51b
@@ -92,7 +92,7 @@ Visualization of SAM and MatAny on real-world data from [AM-2K](https://github.c
 
 - [x] adjustable trimap generation
 - [x] arxiv tech report
-- [ ] add example data
+- [x] add example data
 - [ ] support user transparency correction
 - [ ] support text input
 - [ ] finetune ViTMatte for better performance
