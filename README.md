@@ -77,7 +77,7 @@ python matte_anything.py
 ## 🎬Demo
 
 
-https://github.com/hustvl/Matte-Anything/assets/74295796/f84db7c2-7282-4084-b130-ada0b352d8eb
+https://github.com/hustvl/Matte-Anything/assets/74295796/dfe051c2-b5d1-442d-9eff-cd1fcfd1f51b
 
 
 Visualization of SAM and MatAny on real-world data from [AM-2K](https://github.com/JizhiziLi/GFM) and [P3M-500](https://github.com/JizhiziLi/P3M) .
