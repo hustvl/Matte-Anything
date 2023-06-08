@@ -75,10 +75,7 @@ python matte_anything.py
 3. Modify ``erode_kernel_size`` and ``dilate_kernel_size`` for a better trimap (optional).
 
 ## 🎬Demo
-Visualization of SAM and MatAny on real-world data from [AM-2K]() and [P3M-500]()
-![web_ui](figs/demo1.png)
-Visualization of SAM and MatAny on [Composition-1k](). 
-![web_ui](figs/demo2.png)
+
 
 
 ## 📋 Todo List
