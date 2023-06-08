@@ -92,7 +92,7 @@ Visualization of SAM and MatAny on real-world data from [AM-2K](https://github.c
 
 - [x] adjustable trimap generation
 - [x] arxiv tech report
-- [x] add example data
+- [ ] add example data
 - [ ] support user transparency correction
 - [ ] support text input
 - [ ] finetune ViTMatte for better performance
