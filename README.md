@@ -13,6 +13,7 @@ Institute: School of EIC, HUST
 </div>
 
 
+
 ## 📜 Introduction
 
 We propose Matte Anything (MatAny), an interactive natural image matting model. It could produce high-quality alpha-matte with various simple hints. The key insight of MatAny is to generate pseudo trimap automatically with contour and transparency prediction. We leverage task-specific vision models to enhance the performance of natural image matting.
@@ -74,11 +75,8 @@ python matte_anything.py
 2. Click ``Start!``.
 3. Modify ``erode_kernel_size`` and ``dilate_kernel_size`` for a better trimap (optional).
 
-## Demo
+## 🎬 Demo
 
-<video src="https://github.com/YeL6/MatteAnything-Demo/raw/main/matte_anything.mp4" controls>
-  Your browser does not support the video tag.
-</video>
 
 
 
