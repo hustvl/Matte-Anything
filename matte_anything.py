@@ -260,7 +260,7 @@ if __name__ == "__main__":
 
         # new background
 
-        background_1 = cv2.imread('figs/nightsky.jpg')
+        background_1 = cv2.imread('figs/sunny.jpg')
         background_2 = cv2.imread('figs/sea_sunset.jpg')
         background_3 = cv2.imread('figs/mars.jpg')
 
