@@ -74,7 +74,11 @@ python matte_anything.py
 2. Click ``Start!``.
 3. Modify ``erode_kernel_size`` and ``dilate_kernel_size`` for a better trimap (optional).
 
+## Demo
 
+<video src="https://github.com/YeL6/MatteAnything-Demo/raw/main/matte_anything.mp4" controls>
+  Your browser does not support the video tag.
+</video>
 
 
 
