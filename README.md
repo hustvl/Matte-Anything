@@ -6,6 +6,8 @@ Authors: [Jingfeng Yao](https://github.com/JingfengYao), [Xinggang Wang](https:/
 
 Institute: School of EIC, HUST
 
+[arxiv](https://arxiv.org/abs/2306.04121)
+
 </div>
 
 
@@ -19,7 +21,10 @@ If you like Matte Anything, you may also like its previous foundation work [ViTM
 
 ## 📢 News
 
-* **`2023/06/07`** We release source codes of Matte Anything!
+The program is still in progress. You can try the early version first! Thanks for your attention.
+
+* **`2023/06/08`** We release arxiv tech report! 
+* **`2023/06/08`** We release source codes of Matte Anything! 
 
 ## 🌞 Features
 * Matte Anything with Simple Interaction
