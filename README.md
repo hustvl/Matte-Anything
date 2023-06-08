@@ -74,12 +74,11 @@ python matte_anything.py
 2. Click ``Start!``.
 3. Modify ``erode_kernel_size`` and ``dilate_kernel_size`` for a better trimap (optional).
 
-## Demo
-
-<video src="https://github.com/YeL6/MatteAnything-Demo/raw/main/matte_anything.mp4" controls>
-  Your browser does not support the video tag.
-</video>
-
+## 🎬Demo
+Visualization of SAM and MatAny on real-world data from [AM-2K]() and [P3M-500]()
+![web_ui](figs/demo1.png)
+Visualization of SAM and MatAny on [Composition-1k](). 
+![web_ui](figs/demo2.png)
 
 
 ## 📋 Todo List
