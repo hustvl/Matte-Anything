@@ -74,6 +74,27 @@ python matte_anything.py
 2. Click ``Start!``.
 3. Modify ``erode_kernel_size`` and ``dilate_kernel_size`` for a better trimap (optional).
 
+### Demo
+
+<div style="text-align: center;">
+  <img src="figs/demo1.png" alt="demo1" />
+  <p style="text-align: center;">Visualization of SAM and MatAny on Composition-1k. Please zoom in for the best view.</p>
+</div>
+
+
+<div style="text-align: center;">
+  <img src="figs/demo2.png" alt="demo1" />
+  <p style="text-align: center;">Visualization of SAM and MatAny on real-world data from AM-2K and
+P3M-500. Please zoom in for the best view.</p>
+</div>
+
+<video controls>
+  <source src="https://drive.google.com/file/d/1HFiVgLnr5qHnrx8oKImBiMlE-7nfOtS2/view?usp=sharing" type="video/mp4">
+  您的浏览器不支持HTML5视频。
+</video>
+
+
+
 ## 📋 Todo List
 
 - [x] adjustable trimap generation
