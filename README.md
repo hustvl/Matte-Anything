@@ -101,3 +101,13 @@ Visualization of SAM and MatAny on real-world data from [AM-2K](https://github.c
 ## 🤝Acknowledgement
 
 Our repo is built upon [Segment Anything](https://github.com/facebookresearch/segment-anything), [GroundingDINO](https://github.com/IDEA-Research/GroundingDINO), and [ViTMatte](https://github.com/hustvl/ViTMatte). Thanks to their work.
+
+## Citation
+```
+@article{matte_anything,
+  title={Matte Anything: Interactive Natural Image Matting with Segment Anything Models},
+  author={Yao, Jingfeng and Wang, Xinggang and Ye, Lang and Liu, Wenyu},
+  journal={arXiv preprint arXiv:2306.04121},
+  year={2023}
+}
+```
