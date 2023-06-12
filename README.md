@@ -8,12 +8,23 @@ Institute: School of EIC, HUST
 
 (<sup>:email:</sup>) corresponding author
 
-[arxiv preprint](https://arxiv.org/abs/2306.04121)
+[![arxiv paper](https://img.shields.io/badge/arxiv-paper-orange)](https://arxiv.org/abs/2306.04121)
+[![video](https://img.shields.io/badge/Demo-Video-blue)](https://github.com/hustvl/Matte-Anything/assets/74295796/dfe051c2-b5d1-442d-9eff-cd1fcfd1f51b)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![authors](https://img.shields.io/badge/by-hustvl-green)](https://github.com/hustvl)
 
 </div>
 
 ![demo](https://github.com/hustvl/Matte-Anything/assets/74295796/d947f59d-b0c1-4c22-9967-d8f2bf633879)
 
+#
+
+## 📢 News
+
+* **`2023/06/08`** We release arxiv tech report! 
+* **`2023/06/08`** We release source codes of Matte Anything! 
+
+#
 
 ## 📜 Introduction
 
@@ -24,11 +35,6 @@ We propose Matte Anything (MatAny), an interactive natural image matting model. 
 **The program is still in progress**. You can try the early version first! Thanks for your attention.
 
 If you like Matte Anything, you may also like its previous foundation work [ViTMatte](https://github.com/hustvl/ViTMatte).
-
-## 📢 News
-
-* **`2023/06/08`** We release arxiv tech report! 
-* **`2023/06/08`** We release source codes of Matte Anything! 
 
 ## 🌞 Features
 * Matte Anything with Simple Interaction
