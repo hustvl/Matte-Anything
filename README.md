@@ -24,8 +24,6 @@ Institute: School of EIC, HUST
 * **`2023/06/08`** We release arxiv tech report! 
 * **`2023/06/08`** We release source codes of Matte Anything! 
 
-**The program is still in progress**. You can try the early version first! Thanks for your attention. If you like Matte Anything, you may also like its **previous foundation work [ViTMatte](https://github.com/hustvl/ViTMatte)**.
-
 #
 
 ## 📜 Introduction
@@ -33,6 +31,8 @@ Institute: School of EIC, HUST
 We propose Matte Anything (MatAny), an interactive natural image matting model. It could produce high-quality alpha-matte with various simple hints. The key insight of MatAny is to generate pseudo trimap automatically with contour and transparency prediction. We leverage task-specific vision models to enhance the performance of natural image matting.
 
 ![web_ui](figs/first.png)
+
+**The program is still in progress**. You can try the early version first! Thanks for your attention. If you like Matte Anything, you may also like its previous foundation work [ViTMatte](https://github.com/hustvl/ViTMatte).
 
 ## 🌞 Features
 * Matte Anything with Simple Interaction
