@@ -24,6 +24,8 @@ Institute: School of EIC, HUST
 * **`2023/06/08`** We release arxiv tech report! 
 * **`2023/06/08`** We release source codes of Matte Anything! 
 
+**The program is still in progress**. You can try the early version first! Thanks for your attention. If you like Matte Anything, you may also like its previous foundation work [ViTMatte](https://github.com/hustvl/ViTMatte).
+
 #
 
 ## 📜 Introduction
@@ -32,7 +34,6 @@ We propose Matte Anything (MatAny), an interactive natural image matting model. 
 
 ![web_ui](figs/first.png)
 
-**The program is still in progress**. You can try the early version first! Thanks for your attention. If you like Matte Anything, you may also like its previous foundation work [ViTMatte](https://github.com/hustvl/ViTMatte).
 
 ## 🌞 Features
 * Matte Anything with Simple Interaction
