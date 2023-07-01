@@ -112,6 +112,23 @@ def undo_points(orig_img, sel_pix):
         temp = cv2.cvtColor(temp, cv2.COLOR_BGR2RGB)
     return temp if isinstance(temp, np.ndarray) else np.array(temp)
 
+# undo all selected points
+def undo_all_points(orig_img, sel_pix):
+    if orig_img is None:
+        raise gr.Error("Please upload pictures first!")
+    else:
+        temp = orig_img.copy()
+        while len(sel_pix) != 0:
+            sel_pix.pop()
+        if temp[..., 0][0, 0] == temp[..., 2][0, 0]:  # BGR to RGB
+            temp = cv2.cvtColor(temp, cv2.COLOR_BGR2RGB)
+    return temp if isinstance(temp, np.ndarray) else np.array(temp)
+
+# clear the fg_caption
+def clear_fg_caption(fg_caption):
+    fg_caption = ""
+    return fg_caption
+
 # once user upload an image, the original image is stored in `original_image`
 def store_img(img):
     return img, []  # when new image is uploaded, `selected_points` should be empty
@@ -140,22 +157,56 @@ if __name__ == "__main__":
     vitmatte = init_vitmatte(vitmatte_model)
     grounding_dino = dino_load_model(grounding_dino['config'], grounding_dino['weight'])
 
-    def run_inference(input_x, selected_points, erode_kernel_size, dilate_kernel_size):
+    def run_inference(input_x, selected_points, erode_kernel_size, dilate_kernel_size, fg_box_threshold, fg_text_threshold, fg_caption, tr_box_threshold, tr_text_threshold, tr_caption = "glass, lens, crystal, diamond, bubble, bulb, web, grid"):
+        
         predictor.set_image(input_x)
+
+        dino_transform = T.Compose(
+        [
+            T.RandomResize([800], max_size=1333),
+            T.ToTensor(),
+            T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ])
+        image_transformed, _ = dino_transform(Image.fromarray(input_x), None)
+        
         if len(selected_points) != 0:
             points = torch.Tensor([p for p, _ in selected_points]).to(device).unsqueeze(1)
             labels = torch.Tensor([int(l) for _, l in selected_points]).to(device).unsqueeze(1)
             transformed_points = predictor.transform.apply_coords_torch(points, input_x.shape[:2])
             print(points.size(), transformed_points.size(), labels.size(), input_x.shape, points)
+            point_coords=transformed_points.permute(1, 0, 2)
+            point_labels=labels.permute(1, 0)
         else:
             transformed_points, labels = None, None
+            point_coords, point_labels = None, None
+        
+        if fg_caption is not None and fg_caption != "":
+            fg_boxes, logits, phrases = dino_predict(
+                model=grounding_dino,
+                image=image_transformed,
+                caption=fg_caption,
+                box_threshold=fg_box_threshold,
+                text_threshold=fg_text_threshold
+                )
+            print(logits, phrases)
+            if fg_boxes.shape[0] == 0:
+                # no fg object detected
+                transformed_boxes = None
+            else:
+                h, w, _ = input_x.shape
+                fg_boxes = torch.Tensor(fg_boxes).to(device)
+                fg_boxes = fg_boxes * torch.Tensor([w, h, w, h]).to(device)
+                fg_boxes = box_convert(boxes=fg_boxes, in_fmt="cxcywh", out_fmt="xyxy")
+                transformed_boxes = predictor.transform.apply_boxes_torch(fg_boxes, input_x.shape[:2])
+        else:
+            transformed_boxes = None
                     
         # predict segmentation according to the boxes
         masks, scores, logits = predictor.predict_torch(
-            point_coords=transformed_points.permute(1, 0, 2),
-            point_labels=labels.permute(1, 0),
-            boxes=None,
-            multimask_output=False,
+            point_coords = point_coords,
+            point_labels = point_labels,
+            boxes = transformed_boxes,
+            multimask_output = False,
         )
         masks = masks.cpu().detach().numpy()
         mask_all = np.ones((input_x.shape[0], input_x.shape[1], 3))
@@ -171,20 +222,13 @@ if __name__ == "__main__":
         trimap = generate_trimap(mask, erode_kernel_size, dilate_kernel_size).astype(np.float32)
         trimap[trimap==128] = 0.5
         trimap[trimap==255] = 1
-
-        dino_transform = T.Compose(
-        [
-            T.RandomResize([800], max_size=1333),
-            T.ToTensor(),
-            T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-        ])
-        image_transformed, _ = dino_transform(Image.fromarray(input_x), None)
+        
         boxes, logits, phrases = dino_predict(
             model=grounding_dino,
             image=image_transformed,
-            caption="glass, lens, crystal, diamond, bubble, bulb, web, grid",
-            box_threshold=0.5,
-            text_threshold=0.25,
+            caption= tr_caption,
+            box_threshold=tr_box_threshold,
+            text_threshold=tr_text_threshold,
             )
         annotated_frame = dino_annotate(image_source=input_x, boxes=boxes, logits=logits, phrases=phrases)
         # 把annotated_frame的改成RGB
@@ -243,7 +287,7 @@ if __name__ == "__main__":
         new_bg_2 = input_x * np.expand_dims(alpha, axis=2).repeat(3,2)/255 + background_2 * (1 - np.expand_dims(alpha, axis=2).repeat(3,2))/255
         new_bg_3 = input_x * np.expand_dims(alpha, axis=2).repeat(3,2)/255 + background_3 * (1 - np.expand_dims(alpha, axis=2).repeat(3,2))/255
 
-        return  mask, alpha,  foreground_mask, foreground_alpha, new_bg_1, new_bg_2, new_bg_3
+        return  mask, alpha, foreground_mask, foreground_alpha, new_bg_1, new_bg_2, new_bg_3
 
     with gr.Blocks() as demo:
         gr.Markdown(
@@ -254,39 +298,69 @@ if __name__ == "__main__":
         with gr.Row().style(equal_height=True):
             with gr.Column():
                 # input image
-                original_image = gr.State(value=None)   # store original image without points, default None
-                input_image = gr.Image(type="numpy")
-                # point prompt
-                with gr.Column():
-                    selected_points = gr.State([])      # store points
-                    with gr.Row():
-                        undo_button = gr.Button('Remove Points')
-                    radio = gr.Radio(['foreground_point', 'background_point'], label='point labels')
+                original_image = gr.State(value="numpy")   # store original image without points, default None
+                input_image = gr.Image(type="numpy", label="Input Image")                             
+                # prompt (point or text)
+                # Point Input
+                with gr.Tab(label='Point Input') as Tab1:
+                    with gr.Column():
+                        selected_points = gr.State([])      # store points
+                        radio = gr.Radio(['foreground_point', 'background_point'], label='Point Labels')
+                        with gr.Row():
+                            undo_button = gr.Button('Remove Point')
+                            undo_all_button = gr.Button('Remove All  Points')
+                # Foreground Text Input
+                with gr.Tab(label='Foreground Text Input') as Tab2:
+                    with gr.Box():
+                        gr.Markdown("Foreground Text Input")
+                        fg_caption = gr.inputs.Textbox(lines=1, default="", label="foreground input text")                   
+                
+                
                 # run button
                 button = gr.Button("Start!")
-                erode_kernel_size = gr.inputs.Slider(minimum=1, maximum=30, step=1, default=10, label="erode_kernel_size")
-                dilate_kernel_size = gr.inputs.Slider(minimum=1, maximum=30, step=1, default=10, label="dilate_kernel_size")
 
-            # show the image with mask
-            with gr.Tab(label='SAM Mask'):
-                mask = gr.Image(type='numpy')
-            # with gr.Tab(label='Trimap'):
-            #     trimap = gr.Image(type='numpy')
-            with gr.Tab(label='Alpha Matte'):
-                alpha = gr.Image(type='numpy')
-            # show only mask
-            with gr.Tab(label='Foreground by SAM Mask'):
-                foreground_by_sam_mask = gr.Image(type='numpy')
-            with gr.Tab(label='Refined by ViTMatte'):
-                refined_by_vitmatte = gr.Image(type='numpy')
-            # with gr.Tab(label='Transparency Detection'):
-            #     transparency = gr.Image(type='numpy')
-            with gr.Tab(label='New Background 1'):
-                new_bg_1 = gr.Image(type='numpy')
-            with gr.Tab(label='New Background 2'):
-                new_bg_2 = gr.Image(type='numpy')
-            with gr.Tab(label='New Background 3'):
-                new_bg_3 = gr.Image(type='numpy')
+                # Trimap Settings
+                with gr.Tab(label='Trimap Settings'):
+                    gr.Markdown("Trimap Settings")
+                    erode_kernel_size = gr.inputs.Slider(minimum=1, maximum=30, step=1, default=10, label="erode_kernel_size")
+                    dilate_kernel_size = gr.inputs.Slider(minimum=1, maximum=30, step=1, default=10, label="dilate_kernel_size")
+                
+                # Input Text Settings
+                with gr.Tab(label='Input Text Settings'):
+                    gr.Markdown("Input Text Settings")
+                    fg_box_threshold = gr.inputs.Slider(minimum=0.0, maximum=1.0, step=0.001, default=0.25, label="foreground_box_threshold")
+                    fg_text_threshold = gr.inputs.Slider(minimum=0.0, maximum=1.0, step=0.001, default=0.25, label="foreground_text_threshold")
+
+                # Transparency Settings
+                with gr.Tab(label='Transparency Settings'):
+                    gr.Markdown("Transparency Settings")
+                    tr_caption = gr.inputs.Textbox(lines=1, default="glass.lens.crystal.diamond.bubble.bulb.web.grid", label="transparency input text")
+                    tr_box_threshold = gr.inputs.Slider(minimum=0.0, maximum=1.0, step=0.005, default=0.5, label="transparency_box_threshold")
+                    tr_text_threshold = gr.inputs.Slider(minimum=0.0, maximum=1.0, step=0.005, default=0.25, label="transparency_text_threshold")
+
+            
+            with gr.Column():
+
+                # show the image with mask
+                with gr.Tab(label='SAM Mask'):
+                    mask = gr.Image(type='numpy')
+                # with gr.Tab(label='Trimap'):
+                #     trimap = gr.Image(type='numpy')
+                with gr.Tab(label='Alpha Matte'):
+                    alpha = gr.Image(type='numpy')
+                # show only mask
+                with gr.Tab(label='Foreground by SAM Mask'):
+                    foreground_by_sam_mask = gr.Image(type='numpy')
+                with gr.Tab(label='Refined by ViTMatte'):
+                    refined_by_vitmatte = gr.Image(type='numpy')
+                # with gr.Tab(label='Transparency Detection'):
+                #     transparency = gr.Image(type='numpy')
+                with gr.Tab(label='New Background 1'):
+                    new_bg_1 = gr.Image(type='numpy')
+                with gr.Tab(label='New Background 2'):
+                    new_bg_2 = gr.Image(type='numpy')
+                with gr.Tab(label='New Background 3'):
+                    new_bg_3 = gr.Image(type='numpy')
 
         input_image.upload(
             store_img,
@@ -303,9 +377,26 @@ if __name__ == "__main__":
             [original_image, selected_points],
             [input_image]
         )
-        button.click(run_inference, inputs=[original_image, selected_points, erode_kernel_size, dilate_kernel_size], outputs=[mask, alpha,  \
-                                            foreground_by_sam_mask, refined_by_vitmatte, new_bg_1, new_bg_2, new_bg_3])
-
+        undo_all_button.click(
+            undo_all_points,
+            [original_image, selected_points],
+            [input_image]
+        )
+        Tab1.select(
+            clear_fg_caption,
+            [fg_caption],
+            [fg_caption]
+        )
+        Tab2.select(
+            undo_all_points,
+            [original_image, selected_points],
+            [input_image]
+        )
+        
+        
+        button.click(run_inference, inputs=[original_image, selected_points, erode_kernel_size, dilate_kernel_size, fg_box_threshold, fg_text_threshold, fg_caption, tr_box_threshold, tr_text_threshold, \
+                                             tr_caption],  outputs=[mask, alpha, foreground_by_sam_mask, refined_by_vitmatte, new_bg_1, new_bg_2, new_bg_3])
+    
         with gr.Row():
             with gr.Column():
                 background_image = gr.State(value=None)
