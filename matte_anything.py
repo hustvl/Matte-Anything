@@ -180,7 +180,7 @@ if __name__ == "__main__":
             transformed_points, labels = None, None
             point_coords, point_labels = None, None
         
-        if fg_caption is not None and fg_caption != "":
+        if fg_caption is not None and fg_caption != "": # This section has benefited from the contributions of neuromorph,thanks! 
             fg_boxes, logits, phrases = dino_predict(
                 model=grounding_dino,
                 image=image_transformed,
