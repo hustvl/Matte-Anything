@@ -144,7 +144,11 @@ def convert_pixels(gray_image, boxes):
     return converted_image
 
 if __name__ == "__main__":
-    device = 'cuda'
+    if torch.cuda.is_available():
+        device = 'cuda'
+    else:
+        device = 'cpu'
+
     sam_model = 'vit_h'
     vitmatte_model = 'vit_b'
     
@@ -186,8 +190,8 @@ if __name__ == "__main__":
                 image=image_transformed,
                 caption=fg_caption,
                 box_threshold=fg_box_threshold,
-                text_threshold=fg_text_threshold
-                )
+                text_threshold=fg_text_threshold,
+                device=device)
             print(logits, phrases)
             if fg_boxes.shape[0] == 0:
                 # no fg object detected
@@ -229,7 +233,7 @@ if __name__ == "__main__":
             caption= tr_caption,
             box_threshold=tr_box_threshold,
             text_threshold=tr_text_threshold,
-            )
+            device=device)
         annotated_frame = dino_annotate(image_source=input_x, boxes=boxes, logits=logits, phrases=phrases)
         # 把annotated_frame的改成RGB
         annotated_frame = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
