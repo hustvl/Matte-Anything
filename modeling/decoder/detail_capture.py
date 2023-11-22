@@ -37,7 +37,7 @@ class ConvStream(nn.Module):
         super().__init__()
         self.convs = nn.ModuleList()
         
-        self.conv_chans = out_chans
+        self.conv_chans = out_chans.copy()
         self.conv_chans.insert(0, in_chans)
         
         for i in range(len(self.conv_chans)-1):
@@ -115,7 +115,7 @@ class Detail_Capture(nn.Module):
         self.conv_chans = self.convstream.conv_chans
 
         self.fusion_blks = nn.ModuleList()
-        self.fus_channs = fusion_out
+        self.fus_channs = fusion_out.copy()
         self.fus_channs.insert(0, in_chans)
         for i in range(len(self.fus_channs)-1):
             self.fusion_blks.append(
