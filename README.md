@@ -21,6 +21,7 @@ Institute: School of EIC, HUST
 
 ## 📢 News
 
+* **`2024/01/02`** Now you can get alpha materials with MatAny! Check it now!
 * **`2023/07/01`** We release a new version that enables text input and transparency correction!
 * **`2023/06/08`** We release arxiv tech report! 
 * **`2023/06/08`** We release source codes of Matte Anything!
@@ -28,6 +29,12 @@ Institute: School of EIC, HUST
 The program is still in progress. You can try the early version first! Thanks for your attention. If you like Matte Anything, you may also like its previous foundation work [ViTMatte](https://github.com/hustvl/ViTMatte).
 
 #
+
+## 🐱 Transparent Materials of Yourself !
+
+MatAny could get matting results as *RGBA images*. It will be saved into ```your_demos/your_demo.png```. You can specify the saving name of it in our UI. We hope MatAny could really help, even in a tiny part of your life.
+
+<img src="figs/materials.png" width="70%">
 
 ## 📜 Introduction
 

@@ -150,3 +150,6 @@ cluster.sh
 # GroundingDINO
 GroundingDINO/
 testcode/
+
+# your own demos
+your_demos/

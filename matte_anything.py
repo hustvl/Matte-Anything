@@ -161,7 +161,8 @@ if __name__ == "__main__":
     vitmatte = init_vitmatte(vitmatte_model)
     grounding_dino = dino_load_model(grounding_dino['config'], grounding_dino['weight'])
 
-    def run_inference(input_x, selected_points, erode_kernel_size, dilate_kernel_size, fg_box_threshold, fg_text_threshold, fg_caption, tr_box_threshold, tr_text_threshold, tr_caption = "glass, lens, crystal, diamond, bubble, bulb, web, grid"):
+    def run_inference(input_x, selected_points, erode_kernel_size, dilate_kernel_size, fg_box_threshold, fg_text_threshold, fg_caption, 
+                      tr_box_threshold, tr_text_threshold, save_name, tr_caption = "glass, lens, crystal, diamond, bubble, bulb, web, grid"):
         
         predictor.set_image(input_x)
 
@@ -235,7 +236,7 @@ if __name__ == "__main__":
             text_threshold=tr_text_threshold,
             device=device)
         annotated_frame = dino_annotate(image_source=input_x, boxes=boxes, logits=logits, phrases=phrases)
-        # 把annotated_frame的改成RGB
+        
         annotated_frame = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
 
         if boxes.shape[0] == 0:
@@ -264,6 +265,12 @@ if __name__ == "__main__":
 
         # calculate foreground with mask
         foreground_mask = input_x * np.expand_dims(mask/255, axis=2).repeat(3,2)/255 + background * (1 - np.expand_dims(mask/255, axis=2).repeat(3,2))/255
+
+        # concatenate input_x and foreground_alpha
+        cv2_alpha = (np.expand_dims(alpha, axis=2)*255).astype(np.uint8)
+        cv2_input_x = cv2.cvtColor(input_x, cv2.COLOR_BGR2RGB)
+        rgba = np.concatenate((cv2_input_x, cv2_alpha), axis=2)
+        cv2.imwrite(f'your_demos/{save_name}.png', rgba)
 
         foreground_alpha[foreground_alpha>1] = 1
         foreground_mask[foreground_mask>1] = 1
@@ -318,6 +325,12 @@ if __name__ == "__main__":
                     with gr.Box():
                         gr.Markdown("Foreground Text Input")
                         fg_caption = gr.inputs.Textbox(lines=1, default="", label="foreground input text")                   
+                
+                # Save Config
+                with gr.Tab(label='Save Config') as Tab3:
+                    with gr.Box():
+                        gr.Markdown("save name")
+                        save_dir = gr.inputs.Textbox(lines=1, default="", label="Give a name of your demo. It will be saved in ```your_demos/your_name.pny```")
                 
                 
                 # run button
@@ -399,7 +412,7 @@ if __name__ == "__main__":
         
         
         button.click(run_inference, inputs=[original_image, selected_points, erode_kernel_size, dilate_kernel_size, fg_box_threshold, fg_text_threshold, fg_caption, tr_box_threshold, tr_text_threshold, \
-                                             tr_caption],  outputs=[mask, alpha, foreground_by_sam_mask, refined_by_vitmatte, new_bg_1, new_bg_2, new_bg_3])
+                                            save_dir, tr_caption],  outputs=[mask, alpha, foreground_by_sam_mask, refined_by_vitmatte, new_bg_1, new_bg_2, new_bg_3])
     
         with gr.Row():
             with gr.Column():
