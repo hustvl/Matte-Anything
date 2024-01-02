@@ -32,7 +32,7 @@ The program is still in progress. You can try the early version first! Thanks fo
 
 ## 🔥 Transparent Materials of Yourself !
 
-MatAny could get matting results as *RGBA images*. It will be saved into ```your_demos/your_demo.png```. You can specify the saving name of it in our UI. We hope that MatAny could truly help, even if just a small part of your life.
+MatAny could get matting results as *RGBA images*. It will be saved into ```your_demos/your_demo.png```. You can specify the saving name of it in our UI. We hope MatAny could help.
 
 <p align="center">
 <img src="figs/materials.png" width="70%">
