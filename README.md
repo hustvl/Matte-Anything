@@ -21,6 +21,7 @@ Institute: School of EIC, HUST
 
 ## 📢 News
 
+* **`2024/05/04`** Matte Anything has been accepted by the Journal of Image and Vision Computing!
 * **`2024/01/02`** Now you can get alpha materials with MatAny! Check it now!
 * **`2023/07/01`** We release a new version that enables text input and transparency correction!
 * **`2023/06/08`** We release arxiv tech report! 
