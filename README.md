@@ -120,10 +120,12 @@ Our repo is built upon [Segment Anything](https://github.com/facebookresearch/se
 
 ## Citation
 ```
-@article{matte_anything,
-  title={Matte Anything: Interactive Natural Image Matting with Segment Anything Models},
+@article{yao2024matte,
+  title={Matte anything: Interactive natural image matting with segment anything model},
   author={Yao, Jingfeng and Wang, Xinggang and Ye, Lang and Liu, Wenyu},
-  journal={arXiv preprint arXiv:2306.04121},
-  year={2023}
+  journal={Image and Vision Computing},
+  pages={105067},
+  year={2024},
+  publisher={Elsevier}
 }
 ```
