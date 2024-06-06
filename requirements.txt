@@ -7,5 +7,5 @@ setuptools==58.2.0
 easydict
 wget
 scikit-image
-gradio
+gradio==3.34.0
 fairscale
